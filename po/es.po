@@ -428,3 +428,6 @@ msgstr "Centro de software"
 msgid "Ceibal Highlights"
 msgstr "Destacados de Ceibal"
 
+msgid "CeibalHighlights"
+msgstr "Destacados de Ceibal"
+
