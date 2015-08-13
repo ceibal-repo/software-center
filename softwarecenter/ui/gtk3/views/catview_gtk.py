@@ -460,34 +460,41 @@ class LobbyViewGtk(CategoriesViewGtk):
                 'clicked', self.on_category_clicked, whats_new_cat)
     
     def _ceibal_get_docs(self):
-        """ return the database docids for the given category """
+        """ return the database docids for the given pkgs name """
+        docs = None
         enq = AppEnquire(self.db._aptcache, self.db)
         app_filter = AppFilter(self.db, self.db._aptcache)
         
         app_filter.set_available_only(True)
         #app_filter.set_not_installed_only(True)
         p = "http://apt.ceibal.edu.uy/recommendations/list.json"
-        data = json.load(urllib2.urlopen(p))
-        query = get_query_for_pkgnames(data['packages']) 
-        enq.set_query(query,
+        try:
+            data = json.load(urllib2.urlopen(p, timeout=5))
+            query = get_query_for_pkgnames(data['packages']) 
+            enq.set_query(query,
                       limit=20,
                       filter=app_filter,
                       sortmode=0,
                       nonapps_visible=NonAppVisibility.ALWAYS_VISIBLE,
                       nonblocking_load=False)
-        return enq.get_documents()
+            docs = enq.get_documents()
+        except BaseException as e:
+            LOG.error(str(e))
+        return docs
 
 
     def _update_ceibal_apps_content(self):
         # remove any existing children from the grid widget
+        ceibal_cat = None
         LOG.debug("Adding Ceibal highlights pkgs to pane")
         self.ceibal_apps.remove_all()
         docs = self._ceibal_get_docs()
-        self._add_tiles_to_flowgrid(docs, self.ceibal_apps, 8)
-        self.ceibal_apps.show_all()
-        ceibal_cat = get_category_by_name(self.categories, 
+        if docs is not None:
+            self._add_tiles_to_flowgrid(docs, self.ceibal_apps, 8)
+            ceibal_cat = get_category_by_name(self.categories, 
                     u"CeibalHighlights")  # untranslated name
-        return ceibal_cat 
+            self.ceibal_apps.show_all()
+        return ceibal_cat
 
     def _append_ceibal_apps(self):
         self.ceibal_apps = FlowableGrid()
